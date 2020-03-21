@@ -35,7 +35,8 @@ self.addEventListener("install", evt => {
 self.addEventListener("activate", evt => {
   evt.waitUntil(
     // keys() methods is responsible for getting the
-    // cache keys in the browser
+    // cache keys in the browser and pass Promise.all()
+    // during the promise event, delete the older key
     caches.keys().then(keys => {
       console.log(keys); //
       return Promise.all(
