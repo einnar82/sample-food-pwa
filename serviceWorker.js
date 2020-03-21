@@ -1,17 +1,23 @@
-const staticCacheName = "site-static";
+//cache name
+const staticCacheName = "site-static-v1";
+//array of assets to cache
 const assets = [
   "/",
   "/index.html",
+  "/pages/about.html",
+  "/pages/contact.html",
   "/js/app.js",
   "/js/ui.js",
   "/js/materialize.min.js",
   "/css/materialize.min.css",
   "/css/styles.css",
   "/img/dish.png",
-  "https://fonts.googleapis.com/icon?family=Material+Icons"
+  "https://fonts.googleapis.com/icon?family=Material+Icons",
+  "https://fonts.gstatic.com/s/materialicons/v50/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2"
 ];
 //install sw
-// best part to cache assets
+// best part to cache assets but
+// it is fired only when the service worker change
 self.addEventListener("install", evt => {
   // waitUntil is a function that
   // wait until the browser loads before to install cache
@@ -24,9 +30,21 @@ self.addEventListener("install", evt => {
 });
 
 //activate event
-
+// intercept the fetch event
+// update the cache version
 self.addEventListener("activate", evt => {
-  //console.log("Service worker has been activated");
+  evt.waitUntil(
+    // keys() methods is responsible for getting the
+    // cache keys in the browser
+    caches.keys().then(keys => {
+      console.log(keys); //
+      return Promise.all(
+        keys
+          .filter(key => key !== staticCacheName)
+          .map(key => caches.delete(key))
+      );
+    })
+  );
 });
 
 //fetch events
