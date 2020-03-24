@@ -1,11 +1,11 @@
-//cache name
+//cache name of cache shell
 const staticCacheName = "site-static-v1";
+// cache name
+const dynamicCacheName = "site-dynamic-v2";
 //array of assets to cache
 const assets = [
   "/",
   "/index.html",
-  "/pages/about.html",
-  "/pages/contact.html",
   "/js/app.js",
   "/js/ui.js",
   "/js/materialize.min.js",
@@ -13,7 +13,8 @@ const assets = [
   "/css/styles.css",
   "/img/dish.png",
   "https://fonts.googleapis.com/icon?family=Material+Icons",
-  "https://fonts.gstatic.com/s/materialicons/v50/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2"
+  "https://fonts.gstatic.com/s/materialicons/v50/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2",
+  "/pages/offline.html"
 ];
 //install sw
 // best part to cache assets but
@@ -38,10 +39,9 @@ self.addEventListener("activate", evt => {
     // cache keys in the browser and pass Promise.all()
     // during the promise event, delete the older key
     caches.keys().then(keys => {
-      console.log(keys); //
       return Promise.all(
         keys
-          .filter(key => key !== staticCacheName)
+          .filter(key => key !== staticCacheName && key !== dynamicCacheName)
           .map(key => caches.delete(key))
       );
     })
@@ -57,8 +57,20 @@ self.addEventListener("fetch", evt => {
   // that returns the cache of the request if exists
   // or request again from the server
   evt.respondWith(
-    caches.match(evt.request).then(cache => {
-      return cache || fetch(evt.request);
-    })
+    caches
+      .match(evt.request)
+      .then(cache => {
+        return (
+          cache ||
+          fetch(evt.request).then(fetchResponse => {
+            return caches.open(dynamicCacheName).then(cache => {
+              cache.put(evt.request.url, fetchResponse.clone());
+              return fetchResponse;
+            });
+          })
+        );
+      })
+      //fallback page if cache doesn't exists
+      .catch(() => caches.match("/pages/offline.html"))
   );
 });
