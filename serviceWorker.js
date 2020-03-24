@@ -16,6 +16,17 @@ const assets = [
   "https://fonts.gstatic.com/s/materialicons/v50/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2",
   "/pages/offline.html"
 ];
+
+//cache size limit
+const limitCacheSize = (name, size) => {
+  caches.open(name).then(cache => {
+    cache.keys().then(keys => {
+      if (keys.length > size) {
+        cache.delete(keys[0]).then(limitCacheSize(name, size));
+      }
+    });
+  });
+};
 //install sw
 // best part to cache assets but
 // it is fired only when the service worker change
@@ -65,12 +76,17 @@ self.addEventListener("fetch", evt => {
           fetch(evt.request).then(fetchResponse => {
             return caches.open(dynamicCacheName).then(cache => {
               cache.put(evt.request.url, fetchResponse.clone());
+              limitCacheSize(dynamicCacheName, 3);
               return fetchResponse;
             });
           })
         );
       })
       //fallback page if cache doesn't exists
-      .catch(() => caches.match("/pages/offline.html"))
+      .catch(() => {
+        if (evt.request.url.indexOf(".html") > -1) {
+          return caches.match("/pages/offline.html");
+        }
+      })
   );
 });
