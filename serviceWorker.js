@@ -1,7 +1,7 @@
 //cache name of cache shell
 const staticCacheName = "site-static-v1";
 // cache name
-const dynamicCacheName = "site-dynamic-v2";
+const dynamicCacheName = "site-dynamic-v5";
 //array of assets to cache
 const assets = [
   "/",
@@ -67,26 +67,28 @@ self.addEventListener("fetch", evt => {
   // using match(), it has a callback function
   // that returns the cache of the request if exists
   // or request again from the server
-  evt.respondWith(
-    caches
-      .match(evt.request)
-      .then(cache => {
-        return (
-          cache ||
-          fetch(evt.request).then(fetchResponse => {
-            return caches.open(dynamicCacheName).then(cache => {
-              cache.put(evt.request.url, fetchResponse.clone());
-              limitCacheSize(dynamicCacheName, 3);
-              return fetchResponse;
-            });
-          })
-        );
-      })
-      //fallback page if cache doesn't exists
-      .catch(() => {
-        if (evt.request.url.indexOf(".html") > -1) {
-          return caches.match("/pages/offline.html");
-        }
-      })
-  );
+  if (evt.request.url.indexOf("firestore.googleapis.com") === -1) {
+    evt.respondWith(
+      caches
+        .match(evt.request)
+        .then(cache => {
+          return (
+            cache ||
+            fetch(evt.request).then(fetchResponse => {
+              return caches.open(dynamicCacheName).then(cache => {
+                cache.put(evt.request.url, fetchResponse.clone());
+                limitCacheSize(dynamicCacheName, 3);
+                return fetchResponse;
+              });
+            })
+          );
+        })
+        //fallback page if cache doesn't exists
+        .catch(() => {
+          if (evt.request.url.indexOf(".html") > -1) {
+            return caches.match("/pages/offline.html");
+          }
+        })
+    );
+  }
 });
